@@ -1,0 +1,99 @@
+{% extends "base/admin_base.html" %}
+{% block title %}Mahsulotlar{% endblock %}
+{% block page_title %}Mahsulotlar boshqaruvi{% endblock %}
+{% block topbar_actions %}
+<button class="topbar-btn" onclick="openModal('addParfum')"><i class="fas fa-plus"></i> Parfum qo'sh</button>
+{% endblock %}
+{% block content %}
+<div class="panel-card">
+  <table class="data-table">
+    <thead>
+      <tr><th>Parfum</th><th>Brend</th><th>Kategoriya</th><th>Jins</th><th>Narx</th><th>Chegirma</th><th>Ombor</th><th>Holat</th></tr>
+    </thead>
+    <tbody>
+      {% for p in parfums %}
+      <tr>
+        <td>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:36px;height:36px;background:var(--blush,#f5ebe0);display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--gold);">
+              <i class="fas fa-spray-can"></i>
+            </div>
+            <div>
+              <div style="font-weight:500;">{{ p.name }}</div>
+              <div style="font-size:11px;color:#aaa;">{{ p.size }}</div>
+            </div>
+          </div>
+        </td>
+        <td style="color:var(--gold);font-size:13px;">{{ p.brand.name }}</td>
+        <td style="font-size:13px;">{{ p.category.name }}</td>
+        <td style="font-size:12px;">{{ p.get_gender_display }}</td>
+        <td style="font-weight:500;">{{ p.price|floatformat:0 }}</td>
+        <td>{% if p.discount_price %}<span style="color:#dc3545;">{{ p.discount_price|floatformat:0 }}</span>{% else %}<span style="color:#ccc;">—</span>{% endif %}</td>
+        <td style="font-weight:600;color:{% if p.stock < 5 %}#dc3545{% elif p.stock < 20 %}#ffc107{% else %}#28a745{% endif %};">{{ p.stock }}</td>
+        <td>
+          {% if p.is_featured %}<span class="badge badge-vip">Tavsiya</span>{% endif %}
+          {% if p.is_new %}<span class="badge badge-new">Yangi</span>{% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="8" style="text-align:center;color:#ccc;padding:40px;">Parfumlar yo'q. Birinchi parfumni qo'shing!</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- ADD PARFUM MODAL -->
+<div id="addParfum" style="display:none;" class="modal-overlay" onclick="if(event.target===this)closeModal('addParfum')">
+  <div class="modal-box">
+    <div class="modal-header"><div class="modal-title">Yangi parfum qo'shish</div><button class="modal-close" onclick="closeModal('addParfum')">&times;</button></div>
+    <div class="modal-body">
+      <form method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add_parfum">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div class="form-group"><label class="form-label">Parfum nomi *</label><input name="name" class="form-control" required placeholder="Chanel No. 5"></div>
+          <div class="form-group"><label class="form-label">Brend nomi *</label><input name="brand_name" class="form-control" required placeholder="Chanel"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div class="form-group"><label class="form-label">Kategoriya</label><input name="category_name" class="form-control" placeholder="Oriental, Floral..."></div>
+          <div class="form-group">
+            <label class="form-label">Jins</label>
+            <select name="gender" class="form-control">
+              <option value="female">Ayollar uchun</option>
+              <option value="male">Erkaklar uchun</option>
+              <option value="unisex">Uniseks</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+          <div class="form-group"><label class="form-label">Narx (so'm) *</label><input name="price" type="number" class="form-control" required placeholder="350000"></div>
+          <div class="form-group"><label class="form-label">Chegirma narx</label><input name="discount_price" type="number" class="form-control" placeholder="280000"></div>
+          <div class="form-group"><label class="form-label">Ombor miqdori</label><input name="stock" type="number" class="form-control" placeholder="50" value="0"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">O'lchami</label>
+          <select name="size" class="form-control">
+            <option value="30ml">30 ml</option><option value="50ml">50 ml</option>
+            <option value="100ml" selected>100 ml</option><option value="150ml">150 ml</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Yuqori notalar</label><input name="top_notes" class="form-control" placeholder="Bergamot, Limon, Mandarin"></div>
+        <div class="form-group"><label class="form-label">Yurak notalar</label><input name="heart_notes" class="form-control" placeholder="Atirgul, Yasmin, Nilufar"></div>
+        <div class="form-group"><label class="form-label">Asosiy notalar</label><input name="base_notes" class="form-control" placeholder="Musk, Sandalwood, Amber"></div>
+        <div class="form-group"><label class="form-label">Tavsif</label><textarea name="description" class="form-control" rows="3" placeholder="Bu parfum haqida..."></textarea></div>
+        <div style="display:flex;gap:20px;margin-bottom:20px;">
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
+            <input type="checkbox" name="is_featured" style="accent-color:var(--gold);"> Tavsiya etilgan
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
+            <input type="checkbox" name="is_new" checked style="accent-color:var(--gold);"> Yangi
+          </label>
+        </div>
+        <button type="submit" class="btn-primary" style="width:100%;justify-content:center;padding:14px;">
+          <i class="fas fa-plus"></i> Parfum qo'shish
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

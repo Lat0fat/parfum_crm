@@ -1,0 +1,71 @@
+{% extends "base/admin_base.html" %}
+{% block title %}Moliya{% endblock %}
+{% block page_title %}Moliyaviy hisobot{% endblock %}
+{% block topbar_actions %}
+<button class="topbar-btn" onclick="openModal('addExpense')"><i class="fas fa-plus"></i> Xarajat qo'sh</button>
+{% endblock %}
+{% block content %}
+
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:28px;">
+  <div class="stat-card" style="border-top:3px solid #28a745;">
+    <div class="stat-card-label">Umumiy daromad</div>
+    <div class="stat-card-value" style="font-size:32px;color:#28a745;">{{ total_revenue|floatformat:0 }}</div>
+    <div class="stat-card-sub">so'm</div>
+  </div>
+  <div class="stat-card" style="border-top:3px solid #dc3545;">
+    <div class="stat-card-label">Umumiy xarajat</div>
+    <div class="stat-card-value" style="font-size:32px;color:#dc3545;">{{ total_expenses|floatformat:0 }}</div>
+    <div class="stat-card-sub">so'm</div>
+  </div>
+  <div class="stat-card" style="border-top:3px solid var(--gold);">
+    <div class="stat-card-label">Sof foyda</div>
+    <div class="stat-card-value" style="font-size:32px;color:{% if profit > 0 %}#28a745{% else %}#dc3545{% endif %};">{{ profit|floatformat:0 }}</div>
+    <div class="stat-card-sub">so'm</div>
+  </div>
+</div>
+
+<div class="panel-card">
+  <div class="panel-card-header"><div class="panel-card-title">Xarajatlar ro'yxati</div></div>
+  <table class="data-table">
+    <thead><tr><th>Nomi</th><th>Kategoriya</th><th>Summa</th><th>Sana</th></tr></thead>
+    <tbody>
+      {% for e in expenses %}
+      <tr>
+        <td style="font-weight:500;">{{ e.title }}</td>
+        <td><span class="badge badge-confirmed">{{ e.get_category_display }}</span></td>
+        <td style="color:#dc3545;font-weight:600;">{{ e.amount|floatformat:0 }} so'm</td>
+        <td style="font-size:12px;color:#aaa;">{{ e.date|date:"d.m.Y" }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="4" style="text-align:center;color:#ccc;padding:30px;">Xarajatlar yo'q</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div id="addExpense" style="display:none;" class="modal-overlay" onclick="if(event.target===this)closeModal('addExpense')">
+  <div class="modal-box">
+    <div class="modal-header"><div class="modal-title">Xarajat qo'shish</div><button class="modal-close" onclick="closeModal('addExpense')">&times;</button></div>
+    <div class="modal-body">
+      <form method="POST">
+        {% csrf_token %}
+        <div class="form-group"><label class="form-label">Nomi</label><input name="title" class="form-control" required placeholder="Ombor ijarasi"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div class="form-group">
+            <label class="form-label">Kategoriya</label>
+            <select name="category" class="form-control">
+              <option value="purchase">Xarid</option><option value="delivery">Yetkazib berish</option>
+              <option value="marketing">Marketing</option><option value="salary">Maosh</option>
+              <option value="rent">Ijara</option><option value="other">Boshqa</option>
+            </select>
+          </div>
+          <div class="form-group"><label class="form-label">Summa (so'm)</label><input name="amount" type="number" class="form-control" required placeholder="500000"></div>
+        </div>
+        <div class="form-group"><label class="form-label">Sana</label><input name="date" type="date" class="form-control"></div>
+        <div class="form-group"><label class="form-label">Izoh</label><textarea name="description" class="form-control" rows="2"></textarea></div>
+        <button type="submit" class="btn-primary"><i class="fas fa-save"></i> Saqlash</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

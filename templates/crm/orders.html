@@ -1,0 +1,53 @@
+{% extends "base/admin_base.html" %}
+{% block title %}Buyurtmalar{% endblock %}
+{% block page_title %}Buyurtmalar{% endblock %}
+{% block content %}
+<div style="display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;">
+  <a href="{% url 'orders' %}" style="padding:8px 16px;border:1px solid {% if not status_filter %}var(--gold){% else %}var(--border){% endif %};font-size:12px;color:{% if not status_filter %}var(--gold){% else %}#999{% endif %};">Barchasi</a>
+  <a href="?status=new" style="padding:8px 16px;border:1px solid {% if status_filter == 'new' %}var(--gold){% else %}var(--border){% endif %};font-size:12px;color:{% if status_filter == 'new' %}var(--gold){% else %}#999{% endif %};">Yangi</a>
+  <a href="?status=confirmed" style="padding:8px 16px;border:1px solid {% if status_filter == 'confirmed' %}var(--gold){% else %}var(--border){% endif %};font-size:12px;">Tasdiqlangan</a>
+  <a href="?status=processing" style="padding:8px 16px;border:1px solid {% if status_filter == 'processing' %}var(--gold){% else %}var(--border){% endif %};font-size:12px;">Jarayonda</a>
+  <a href="?status=shipped" style="padding:8px 16px;border:1px solid {% if status_filter == 'shipped' %}var(--gold){% else %}var(--border){% endif %};font-size:12px;">Yuborilgan</a>
+  <a href="?status=delivered" style="padding:8px 16px;border:1px solid {% if status_filter == 'delivered' %}var(--gold){% else %}var(--border){% endif %};font-size:12px;">Yetkazilgan</a>
+</div>
+
+<div class="panel-card">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>#</th><th>Mijoz</th><th>Telefon</th><th>Manzil</th>
+        <th>Summa</th><th>Holat</th><th>Sana</th><th>Holat o'zgartirish</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for o in orders %}
+      <tr>
+        <td style="color:var(--gold);font-weight:600;">#{{ o.pk }}</td>
+        <td><a href="{% url 'customers' %}?q={{ o.customer_phone }}" style="font-weight:500;">{{ o.customer_name }}</a></td>
+        <td>{{ o.customer_phone }}</td>
+        <td style="font-size:12px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ o.address }}</td>
+        <td style="font-weight:600;color:var(--gold-dark);">{{ o.total_amount|floatformat:0 }}</td>
+        <td><span class="badge badge-{{ o.status }}">{{ o.get_status_display }}</span></td>
+        <td style="font-size:12px;color:#aaa;">{{ o.created_at|date:"d.m.Y" }}</td>
+        <td>
+          <form method="POST" action="{% url 'update_order_status' o.pk %}" style="display:flex;gap:6px;">
+            {% csrf_token %}
+            <select name="status" style="padding:5px 8px;border:1px solid var(--border);font-size:12px;font-family:'Jost',sans-serif;outline:none;">
+              <option value="new" {% if o.status == 'new' %}selected{% endif %}>Yangi</option>
+              <option value="confirmed" {% if o.status == 'confirmed' %}selected{% endif %}>Tasdiqlangan</option>
+              <option value="processing" {% if o.status == 'processing' %}selected{% endif %}>Jarayonda</option>
+              <option value="shipped" {% if o.status == 'shipped' %}selected{% endif %}>Yuborilgan</option>
+              <option value="delivered" {% if o.status == 'delivered' %}selected{% endif %}>Yetkazilgan</option>
+              <option value="cancelled" {% if o.status == 'cancelled' %}selected{% endif %}>Bekor</option>
+            </select>
+            <button type="submit" style="padding:5px 10px;background:var(--gold);color:white;border:none;cursor:pointer;font-size:11px;">✓</button>
+          </form>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="8" style="text-align:center;color:#ccc;padding:40px;">Buyurtmalar yo'q</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

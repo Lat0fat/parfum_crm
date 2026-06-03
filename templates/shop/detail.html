@@ -1,0 +1,181 @@
+{% extends "base/base.html" %}
+{% block title %}{{ parfum.name }} — Lux Parfum{% endblock %}
+{% block extra_css %}
+<style>
+.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; padding: 60px 80px; }
+.detail-img-box {
+  background: var(--blush); display: flex; align-items: center;
+  justify-content: center; height: 540px; position: relative;
+  overflow: hidden;
+}
+.detail-img-box i { font-size: 180px; color: var(--gold); opacity: .35; }
+.detail-img-decoration {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at center, rgba(201,169,110,.1) 0%, transparent 70%);
+}
+.detail-info { padding: 20px 0; }
+.detail-brand { font-size: 12px; letter-spacing: 3px; text-transform: uppercase; color: var(--gold); margin-bottom: 12px; }
+.detail-name { font-size: clamp(32px, 4vw, 52px); font-weight: 300; margin-bottom: 16px; line-height: 1.1; }
+.detail-meta { display: flex; gap: 20px; margin-bottom: 28px; flex-wrap: wrap; }
+.meta-tag { padding: 6px 14px; border: 1px solid var(--border); font-size: 12px; letter-spacing: 1px; color: var(--text); }
+.detail-price-box { margin-bottom: 32px; display: flex; align-items: baseline; gap: 16px; }
+.detail-price { font-family: 'Cormorant Garamond', serif; font-size: 42px; color: var(--gold-dark); }
+.detail-price-old { font-size: 20px; color: #ccc; text-decoration: line-through; }
+.discount-badge { background: #dc3545; color: white; padding: 4px 10px; font-size: 12px; }
+.notes-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; }
+.note-box { padding: 20px; background: var(--blush); text-align: center; }
+.note-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); margin-bottom: 8px; }
+.note-value { font-size: 13px; color: var(--text); }
+.detail-desc { font-size: 15px; line-height: 1.9; color: var(--text); margin-bottom: 32px; border-left: 2px solid var(--gold); padding-left: 20px; font-style: italic; }
+.qty-selector { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+.qty-label { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); }
+.qty-controls { display: flex; align-items: center; gap: 0; border: 1px solid var(--border); }
+.qty-controls button { width: 40px; height: 40px; background: none; border: none; font-size: 18px; cursor: pointer; transition: background .2s; }
+.qty-controls button:hover { background: var(--blush); }
+.qty-controls span { width: 50px; text-align: center; font-size: 16px; border-left: 1px solid var(--border); border-right: 1px solid var(--border); line-height: 40px; }
+.add-to-cart-big { width: 100%; padding: 18px; font-size: 13px; letter-spacing: 2px; }
+.related-section { padding: 60px 80px; border-top: 1px solid var(--border); background: white; }
+.stock-info { display: flex; align-items: center; gap: 8px; font-size: 13px; margin-bottom: 20px; }
+.stock-dot { width: 8px; height: 8px; border-radius: 50%; background: #28a745; }
+.stock-dot.low { background: #ffc107; }
+.stock-dot.out { background: #dc3545; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="padding: 20px 80px; font-size: 12px; color: #999; display:flex; gap: 8px; align-items: center; border-bottom: 1px solid var(--border);">
+  <a href="{% url 'home' %}" style="color:var(--gold);">Bosh sahifa</a>
+  <span>/</span>
+  <a href="{% url 'catalog' %}" style="color:var(--gold);">Katalog</a>
+  <span>/</span>
+  <span>{{ parfum.name }}</span>
+</div>
+
+<div class="detail-grid">
+  <div class="detail-img-box">
+    <div class="detail-img-decoration"></div>
+    <i class="fas fa-spray-can"></i>
+    {% if parfum.is_new %}<span style="position:absolute;top:24px;left:24px;background:var(--gold);color:white;padding:6px 14px;font-size:11px;letter-spacing:2px;text-transform:uppercase;">YANGI</span>{% endif %}
+  </div>
+
+  <div class="detail-info">
+    <div class="detail-brand">{{ parfum.brand.name }} · {{ parfum.brand.country }}</div>
+    <h1 class="detail-name">{{ parfum.name }}</h1>
+
+    <div class="detail-meta">
+      <span class="meta-tag"><i class="fas fa-vial" style="margin-right:4px;color:var(--gold);"></i>{{ parfum.size }}</span>
+      <span class="meta-tag">{{ parfum.get_gender_display }}</span>
+      <span class="meta-tag">{{ parfum.category.name }}</span>
+      <span class="meta-tag"><i class="fas fa-star" style="margin-right:4px;color:#f0c040;"></i>{{ parfum.rating }} reyting</span>
+    </div>
+
+    <div class="detail-price-box">
+      <span class="detail-price">{{ parfum.final_price|floatformat:0 }} so'm</span>
+      {% if parfum.discount_price %}
+      <span class="detail-price-old">{{ parfum.price|floatformat:0 }}</span>
+      <span class="discount-badge">-{{ parfum.discount_percent }}%</span>
+      {% endif %}
+    </div>
+
+    <div class="stock-info">
+      <span class="stock-dot {% if parfum.stock < 5 %}low{% elif parfum.stock == 0 %}out{% endif %}"></span>
+      {% if parfum.stock > 10 %}Omborda bor ({{ parfum.stock }} ta)
+      {% elif parfum.stock > 0 %}Faqat {{ parfum.stock }} ta qoldi
+      {% else %}Omborda yo'q{% endif %}
+    </div>
+
+    {% if parfum.description %}
+    <div class="detail-desc">{{ parfum.description }}</div>
+    {% endif %}
+
+    {% if parfum.top_notes or parfum.heart_notes or parfum.base_notes %}
+    <div class="notes-grid">
+      {% if parfum.top_notes %}
+      <div class="note-box">
+        <div class="note-label">Yuqori notalar</div>
+        <div class="note-value">{{ parfum.top_notes }}</div>
+      </div>
+      {% endif %}
+      {% if parfum.heart_notes %}
+      <div class="note-box">
+        <div class="note-label">Yurak notalar</div>
+        <div class="note-value">{{ parfum.heart_notes }}</div>
+      </div>
+      {% endif %}
+      {% if parfum.base_notes %}
+      <div class="note-box">
+        <div class="note-label">Asosiy notalar</div>
+        <div class="note-value">{{ parfum.base_notes }}</div>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="qty-selector">
+      <span class="qty-label">Miqdor:</span>
+      <div class="qty-controls">
+        <button onclick="changeQtyLocal(-1)">−</button>
+        <span id="localQty">1</span>
+        <button onclick="changeQtyLocal(1)">+</button>
+      </div>
+    </div>
+
+    <button class="btn-gold add-to-cart-big" onclick="addMultiple()">
+      <i class="fas fa-shopping-bag"></i> Savatga qo'shish
+    </button>
+    <div style="margin-top:16px;text-align:center;font-size:12px;color:#aaa;">
+      <i class="fas fa-shield-alt" style="margin-right:4px;color:var(--gold);"></i> Original mahsulot kafolati &nbsp;·&nbsp;
+      <i class="fas fa-truck" style="margin-right:4px;color:var(--gold);"></i> Tez yetkazib berish
+    </div>
+  </div>
+</div>
+
+{% if related %}
+<div class="related-section">
+  <div class="section-header" style="text-align:center;margin-bottom:40px;">
+    <p style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:10px;">Shunga o'xshash</p>
+    <h2 style="font-size:36px;font-weight:300;">O'xshash parfumlar</h2>
+  </div>
+  <div class="parfum-grid">
+    {% for p in related %}
+    <div class="parfum-card">
+      <a href="{% url 'parfum_detail' p.pk %}">
+        <div class="parfum-card-img"><i class="fas fa-spray-can parfum-icon"></i></div>
+      </a>
+      <div class="parfum-card-body">
+        <div class="parfum-brand">{{ p.brand.name }}</div>
+        <a href="{% url 'parfum_detail' p.pk %}"><div class="parfum-name">{{ p.name }}</div></a>
+        <span class="parfum-price">{{ p.final_price|floatformat:0 }} so'm</span>
+        <div class="parfum-actions">
+          <button class="btn-cart" onclick="addToCart({{ p.pk }},'{{ p.name }}','{{ p.brand.name }}',{{ p.final_price }})">
+            <i class="fas fa-shopping-bag"></i> Savatga
+          </button>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let localQty = 1;
+function changeQtyLocal(d) {
+  localQty = Math.max(1, localQty + d);
+  document.getElementById('localQty').textContent = localQty;
+}
+function addMultiple() {
+  for(let i=0;i<localQty;i++) {
+    addToCart({{ parfum.pk }}, '{{ parfum.name }}', '{{ parfum.brand.name }}', {{ parfum.final_price }});
+  }
+  // fix qty instead of adding localQty times
+  const item = cart.find(i => i.id === {{ parfum.pk }});
+  if(item) { item.qty = item.qty - localQty + localQty; }
+  saveCart(); updateCartUI();
+  showToast('{{ parfum.name }} savatga qo\'shildi!');
+}
+</script>
+{% endblock %}

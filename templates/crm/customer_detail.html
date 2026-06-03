@@ -1,0 +1,105 @@
+{% extends "base/admin_base.html" %}
+{% block title %}{{ customer.name }}{% endblock %}
+{% block page_title %}{{ customer.name }}{% endblock %}
+{% block content %}
+<div style="display:grid;grid-template-columns:320px 1fr;gap:24px;">
+  <!-- CUSTOMER INFO -->
+  <div>
+    <div class="panel-card" style="margin-bottom:20px;">
+      <div class="panel-card-body" style="text-align:center;padding:32px 24px;">
+        <div style="width:80px;height:80px;border-radius:50%;background:var(--blush,#f5ebe0);display:flex;align-items:center;justify-content:center;color:var(--gold);font-family:'Cormorant Garamond',serif;font-size:36px;margin:0 auto 16px;">
+          {{ customer.name|first }}
+        </div>
+        <h2 style="font-size:22px;margin-bottom:6px;">{{ customer.name }}</h2>
+        <span class="badge badge-{{ customer.status }}">{{ customer.get_status_display }}</span>
+        <div style="margin-top:20px;font-family:'Cormorant Garamond',serif;font-size:32px;color:var(--gold-dark);">
+          {{ customer.total_spent|floatformat:0 }}
+        </div>
+        <div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#999;">Umumiy xarid (so'm)</div>
+      </div>
+    </div>
+    <div class="panel-card">
+      <div class="panel-card-body">
+        <div style="margin-bottom:14px;"><div style="font-size:11px;color:var(--gold);letter-spacing:1px;margin-bottom:4px;">TELEFON</div><div>{{ customer.phone }}</div></div>
+        {% if customer.email %}<div style="margin-bottom:14px;"><div style="font-size:11px;color:var(--gold);letter-spacing:1px;margin-bottom:4px;">EMAIL</div><div>{{ customer.email }}</div></div>{% endif %}
+        {% if customer.birthday %}<div style="margin-bottom:14px;"><div style="font-size:11px;color:var(--gold);letter-spacing:1px;margin-bottom:4px;">TUG'ILGAN KUN</div><div>{{ customer.birthday|date:"d.m.Y" }}</div></div>{% endif %}
+        {% if customer.address %}<div style="margin-bottom:14px;"><div style="font-size:11px;color:var(--gold);letter-spacing:1px;margin-bottom:4px;">MANZIL</div><div>{{ customer.address }}</div></div>{% endif %}
+        <div><div style="font-size:11px;color:var(--gold);letter-spacing:1px;margin-bottom:4px;">QO'SHILGAN</div><div>{{ customer.created_at|date:"d.m.Y" }}</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <!-- ORDERS -->
+    {% if orders %}
+    <div class="panel-card" style="margin-bottom:20px;">
+      <div class="panel-card-header"><div class="panel-card-title">Buyurtmalar ({{ orders|length }})</div></div>
+      <table class="data-table">
+        <thead><tr><th>#</th><th>Sana</th><th>Summa</th><th>Holat</th></tr></thead>
+        <tbody>
+          {% for o in orders %}
+          <tr>
+            <td style="color:var(--gold);">#{{ o.pk }}</td>
+            <td>{{ o.created_at|date:"d.m.Y H:i" }}</td>
+            <td style="font-weight:500;">{{ o.total_amount|floatformat:0 }} so'm</td>
+            <td><span class="badge badge-{{ o.status }}">{{ o.get_status_display }}</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
+    <!-- ADD INTERACTION -->
+    <div class="panel-card" style="margin-bottom:20px;">
+      <div class="panel-card-header"><div class="panel-card-title">Muloqot qo'shish</div></div>
+      <div class="panel-card-body">
+        <form method="POST">
+          {% csrf_token %}
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+            <div>
+              <label class="form-label">Turi</label>
+              <select name="type" class="form-control">
+                <option value="call">📞 Qo'ng'iroq</option>
+                <option value="message">💬 Xabar</option>
+                <option value="email">📧 Email</option>
+                <option value="visit">🏪 Tashrif</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label">Mavzu</label>
+              <input name="subject" class="form-control" placeholder="Nima haqida..." required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Izoh</label>
+            <textarea name="description" class="form-control" rows="3" placeholder="Batafsil yozing..."></textarea>
+          </div>
+          <button type="submit" class="btn-primary"><i class="fas fa-plus"></i> Saqlash</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- INTERACTIONS -->
+    <div class="panel-card">
+      <div class="panel-card-header"><div class="panel-card-title">Muloqot tarixi</div></div>
+      <div class="panel-card-body">
+        {% for inter in interactions %}
+        <div style="display:flex;gap:14px;padding:14px 0;border-bottom:1px solid #f0ebe4;">
+          <div style="width:36px;height:36px;background:var(--blush,#f5ebe0);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">
+            {% if inter.interaction_type == 'call' %}📞{% elif inter.interaction_type == 'message' %}💬{% elif inter.interaction_type == 'email' %}📧{% elif inter.interaction_type == 'order' %}🛍️{% else %}🏪{% endif %}
+          </div>
+          <div>
+            <div style="font-weight:500;font-size:14px;">{{ inter.subject }}</div>
+            {% if inter.description %}<div style="font-size:13px;color:#999;margin-top:4px;">{{ inter.description }}</div>{% endif %}
+            <div style="font-size:11px;color:#ccc;margin-top:6px;">{{ inter.created_at|date:"d.m.Y H:i" }}</div>
+          </div>
+        </div>
+        {% empty %}
+        <div style="text-align:center;color:#ccc;padding:30px;">Muloqot tarixi yo'q</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

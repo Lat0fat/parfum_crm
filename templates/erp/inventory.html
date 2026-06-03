@@ -1,0 +1,96 @@
+{% extends "base/admin_base.html" %}
+{% block title %}Ombor{% endblock %}
+{% block page_title %}Ombor boshqaruvi{% endblock %}
+{% block topbar_actions %}
+<button class="topbar-btn" onclick="openModal('addStock')"><i class="fas fa-plus"></i> Kirim qo'sh</button>
+{% endblock %}
+{% block content %}
+{% if low_stock %}
+<div style="background:#fff8e1;border:1px solid #ffc107;padding:16px 20px;margin-bottom:24px;border-left:4px solid #ffc107;">
+  <strong>⚠️ Kam qolgan mahsulotlar:</strong>
+  {% for p in low_stock %}{{ p.name }} ({{ p.stock }} ta){% if not forloop.last %}, {% endif %}{% endfor %}
+</div>
+{% endif %}
+
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:24px;">
+  <div>
+    <div class="panel-card">
+      <div class="panel-card-header"><div class="panel-card-title">Mahsulotlar holati</div></div>
+      <table class="data-table">
+        <thead><tr><th>Parfum</th><th>Brend</th><th>Narx</th><th>Ombor</th><th>Holat</th></tr></thead>
+        <tbody>
+          {% for p in parfums %}
+          <tr>
+            <td style="font-weight:500;">{{ p.name }}</td>
+            <td style="font-size:12px;color:var(--gold);">{{ p.brand.name }}</td>
+            <td>{{ p.price|floatformat:0 }} so'm</td>
+            <td style="font-weight:600;">{{ p.stock }}</td>
+            <td>
+              {% if p.stock == 0 %}<span class="badge badge-cancelled">Tugagan</span>
+              {% elif p.stock < 5 %}<span class="badge badge-new">Kam</span>
+              {% else %}<span class="badge badge-active">Yetarli</span>{% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="5" style="text-align:center;color:#ccc;padding:30px;">Mahsulotlar yo'q</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div>
+    <div class="panel-card">
+      <div class="panel-card-header"><div class="panel-card-title">So'nggi harakatlar</div></div>
+      <div class="panel-card-body">
+        {% for m in movements %}
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #f0ebe4;">
+          <div>
+            <div style="font-size:13px;font-weight:500;">{{ m.parfum_name }}</div>
+            <div style="font-size:11px;color:#aaa;">{{ m.created_at|date:"d.m H:i" }}</div>
+          </div>
+          <div style="text-align:right;">
+            <span style="color:{% if m.movement_type == 'in' %}#28a745{% else %}#dc3545{% endif %};font-weight:600;">
+              {% if m.movement_type == 'in' %}+{% else %}-{% endif %}{{ m.quantity }}
+            </span>
+            <div style="font-size:11px;color:#aaa;">{{ m.total_amount|floatformat:0 }} so'm</div>
+          </div>
+        </div>
+        {% empty %}
+        <div style="text-align:center;color:#ccc;padding:20px;">Harakat yo'q</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD STOCK MODAL -->
+<div id="addStock" style="display:none;" class="modal-overlay" onclick="if(event.target===this)closeModal('addStock')">
+  <div class="modal-box">
+    <div class="modal-header"><div class="modal-title">Kirim qo'shish</div><button class="modal-close" onclick="closeModal('addStock')">&times;</button></div>
+    <div class="modal-body">
+      <form method="POST" action="{% url 'add_stock' %}">
+        {% csrf_token %}
+        <div class="form-group">
+          <label class="form-label">Parfum tanlang</label>
+          <select name="parfum_id" class="form-control" required>
+            <option value="">— Tanlang —</option>
+            {% for p in parfums %}<option value="{{ p.pk }}">{{ p.brand.name }} — {{ p.name }}</option>{% endfor %}
+          </select>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div class="form-group">
+            <label class="form-label">Miqdor</label>
+            <input name="quantity" type="number" min="1" class="form-control" required placeholder="50">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Narx (ta boshiga)</label>
+            <input name="unit_price" type="number" class="form-control" required placeholder="150000">
+          </div>
+        </div>
+        <button type="submit" class="btn-primary"><i class="fas fa-plus"></i> Kirim qo'shish</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

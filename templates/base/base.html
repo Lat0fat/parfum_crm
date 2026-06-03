@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}Lux Parfum{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<style>
+:root {
+  --gold: #c9a96e; --gold-light: #e8d5a3; --gold-dark: #9a7a4a;
+  --blush: #f5ebe0; --rose: #d4a5a5; --deep: #1a1008;
+  --cream: #faf6f0; --charcoal: #3d3228; --text: #5a4a3a;
+  --border: #e8ddd0; --shadow: 0 8px 40px rgba(26,16,8,.10);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Jost',sans-serif; background:var(--cream); color:var(--text); overflow-x:hidden; }
+h1,h2,h3,h4 { font-family:'Cormorant Garamond',serif; color:var(--deep); }
+a { text-decoration:none; color:inherit; }
+nav {
+  position:fixed; top:0; width:100%; z-index:1000;
+  background:rgba(250,246,240,.96); backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border); padding:0 40px;
+  display:flex; align-items:center; justify-content:space-between; height:72px;
+}
+.nav-logo { font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:600; letter-spacing:3px; color:var(--deep); }
+.nav-logo span { color:var(--gold); }
+.nav-links { display:flex; gap:36px; }
+.nav-links a { font-size:12px; letter-spacing:2px; text-transform:uppercase; font-weight:500; color:var(--charcoal); transition:color .3s; }
+.nav-links a:hover { color:var(--gold); }
+.nav-icons { display:flex; gap:20px; align-items:center; }
+.nav-icons a { font-size:16px; color:var(--charcoal); transition:color .3s; }
+.nav-icons a:hover { color:var(--gold); }
+.cart-badge { position:relative; }
+.cart-badge span { position:absolute; top:-8px; right:-8px; background:var(--gold); color:white; font-size:10px; width:16px; height:16px; border-radius:50%; display:flex; align-items:center; justify-content:center; }
+main { padding-top:72px; min-height:100vh; }
+footer { background:var(--deep); color:rgba(255,255,255,.7); padding:60px 80px 30px; margin-top:80px; }
+.footer-grid { display:grid; grid-template-columns:2fr 1fr 1fr 1fr; gap:60px; margin-bottom:40px; }
+.footer-brand-name { font-family:'Cormorant Garamond',serif; font-size:28px; color:var(--gold-light); margin-bottom:16px; }
+.footer-desc { font-size:13px; line-height:1.8; opacity:.7; }
+.footer-col h4 { color:white; font-family:'Jost',sans-serif; font-size:11px; letter-spacing:2px; text-transform:uppercase; margin-bottom:20px; }
+.footer-col a { display:block; font-size:13px; color:rgba(255,255,255,.6); margin-bottom:10px; transition:color .3s; }
+.footer-col a:hover { color:var(--gold-light); }
+.footer-bottom { border-top:1px solid rgba(255,255,255,.1); padding-top:24px; display:flex; justify-content:space-between; align-items:center; font-size:12px; opacity:.5; }
+.btn-gold { background:var(--gold); color:white; border:none; padding:14px 40px; font-family:'Jost',sans-serif; font-size:12px; letter-spacing:2px; text-transform:uppercase; cursor:pointer; transition:all .3s; display:inline-flex; align-items:center; gap:10px; }
+.btn-gold:hover { background:var(--gold-dark); transform:translateY(-1px); }
+.btn-outline { background:transparent; color:var(--gold); border:1px solid var(--gold); padding:12px 36px; font-family:'Jost',sans-serif; font-size:12px; letter-spacing:2px; text-transform:uppercase; cursor:pointer; transition:all .3s; display:inline-flex; align-items:center; gap:10px; }
+.btn-outline:hover { background:var(--gold); color:white; }
+.messages-container { position:fixed; top:80px; right:20px; z-index:9999; }
+.alert { padding:14px 20px; margin-bottom:10px; border-radius:4px; font-size:14px; display:flex; align-items:center; gap:10px; box-shadow:var(--shadow); animation:slideIn .3s ease; }
+.alert-success { background:#d4edda; color:#155724; border-left:4px solid #28a745; }
+.alert-error { background:#f8d7da; color:#721c24; border-left:4px solid #dc3545; }
+@keyframes slideIn { from { transform:translateX(100px); opacity:0; } to { transform:none; opacity:1; } }
+.parfum-card { background:white; transition:all .4s ease; overflow:hidden; position:relative; }
+.parfum-card:hover { transform:translateY(-6px); box-shadow:0 20px 60px rgba(26,16,8,.15); }
+.parfum-card-img { height:280px; background:var(--blush); display:flex; align-items:center; justify-content:center; overflow:hidden; position:relative; }
+.parfum-card-img .parfum-icon { font-size:80px; opacity:.3; color:var(--gold); }
+.parfum-card-body { padding:20px 24px 24px; }
+.parfum-brand { font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--gold); margin-bottom:6px; }
+.parfum-name { font-family:'Cormorant Garamond',serif; font-size:20px; color:var(--deep); margin-bottom:12px; }
+.parfum-price { font-size:18px; font-weight:500; color:var(--gold-dark); }
+.parfum-price-old { font-size:13px; color:#aaa; text-decoration:line-through; margin-left:8px; }
+.parfum-badge { position:absolute; top:16px; left:16px; background:var(--gold); color:white; font-size:10px; letter-spacing:1px; text-transform:uppercase; padding:4px 10px; }
+.parfum-actions { display:flex; gap:10px; margin-top:16px; }
+.btn-cart { flex:1; background:var(--deep); color:white; border:none; padding:12px; font-family:'Jost',sans-serif; font-size:11px; letter-spacing:2px; text-transform:uppercase; cursor:pointer; transition:all .3s; }
+.btn-cart:hover { background:var(--gold); }
+.btn-wish { width:44px; height:44px; border:1px solid var(--border); background:white; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--text); transition:all .3s; }
+.btn-wish:hover { border-color:var(--rose); color:var(--rose); }
+.cart-sidebar { position:fixed; right:-420px; top:0; height:100%; width:420px; background:white; z-index:2000; box-shadow:-10px 0 60px rgba(0,0,0,.15); transition:right .4s cubic-bezier(.4,0,.2,1); display:flex; flex-direction:column; }
+.cart-sidebar.open { right:0; }
+.cart-overlay { position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:1999; opacity:0; pointer-events:none; transition:opacity .4s; }
+.cart-overlay.open { opacity:1; pointer-events:all; }
+.cart-header { padding:24px 28px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+.cart-header h3 { font-family:'Cormorant Garamond',serif; font-size:22px; }
+.cart-close { background:none; border:none; font-size:20px; cursor:pointer; color:var(--text); }
+.cart-items { flex:1; overflow-y:auto; padding:20px 28px; }
+.cart-item { display:flex; gap:16px; padding:16px 0; border-bottom:1px solid var(--border); }
+.cart-item-img { width:70px; height:70px; background:var(--blush); display:flex; align-items:center; justify-content:center; font-size:28px; color:var(--gold); opacity:.6; flex-shrink:0; }
+.cart-item-info { flex:1; }
+.cart-item-name { font-family:'Cormorant Garamond',serif; font-size:16px; }
+.cart-item-brand { font-size:11px; color:var(--gold); letter-spacing:1px; }
+.cart-item-price { font-weight:500; color:var(--gold-dark); margin-top:6px; }
+.cart-item-controls { display:flex; align-items:center; gap:10px; margin-top:8px; }
+.qty-btn { width:26px; height:26px; border:1px solid var(--border); background:none; cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center; transition:all .2s; }
+.qty-btn:hover { border-color:var(--gold); color:var(--gold); }
+.qty-display { font-size:14px; min-width:20px; text-align:center; }
+.remove-item { color:#ccc; background:none; border:none; cursor:pointer; font-size:14px; margin-left:auto; }
+.remove-item:hover { color:#dc3545; }
+.cart-footer { padding:24px 28px; border-top:1px solid var(--border); }
+.cart-total { display:flex; justify-content:space-between; margin-bottom:20px; }
+.cart-total-label { font-size:13px; letter-spacing:1px; text-transform:uppercase; }
+.cart-total-amount { font-family:'Cormorant Garamond',serif; font-size:24px; color:var(--gold-dark); }
+.empty-cart { text-align:center; padding:60px 0; color:#ccc; }
+.empty-cart i { font-size:48px; margin-bottom:16px; display:block; }
+</style>
+{% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<div class="messages-container">
+{% for message in messages %}
+<div class="alert alert-{{ message.tags }}">
+  <i class="fas fa-{% if message.tags == 'success' %}check-circle{% else %}exclamation-circle{% endif %}"></i>
+  {{ message }}
+</div>
+{% endfor %}
+</div>
+
+<div class="cart-overlay" id="cartOverlay" onclick="closeCart()"></div>
+<div class="cart-sidebar" id="cartSidebar">
+  <div class="cart-header">
+    <h3>Savat</h3>
+    <button class="cart-close" onclick="closeCart()"><i class="fas fa-times"></i></button>
+  </div>
+  <div class="cart-items" id="cartItems">
+    <div class="empty-cart"><i class="fas fa-shopping-bag"></i><p>Savat bo'sh</p></div>
+  </div>
+  <div class="cart-footer">
+    <div class="cart-total">
+      <span class="cart-total-label">Jami</span>
+      <span class="cart-total-amount" id="cartTotal">0 so'm</span>
+    </div>
+    <button class="btn-gold" style="width:100%;justify-content:center;" onclick="openCheckout()">
+      <i class="fas fa-credit-card"></i> Buyurtma berish
+    </button>
+  </div>
+</div>
+
+<nav>
+  <a href="{% url 'home' %}" class="nav-logo">LUX <span>PARFUM</span></a>
+  <div class="nav-links">
+    <a href="{% url 'home' %}">Bosh sahifa</a>
+    <a href="{% url 'catalog' %}">Katalog</a>
+    <a href="{% url 'catalog' %}?gender=female">Ayollar</a>
+    <a href="{% url 'catalog' %}?gender=male">Erkaklar</a>
+    <a href="{% url 'dashboard' %}">Panel</a>
+  </div>
+  <div class="nav-icons">
+    <a href="{% url 'catalog' %}"><i class="fas fa-search"></i></a>
+    <a href="#" class="cart-badge" onclick="openCart(event)">
+      <i class="fas fa-shopping-bag"></i>
+      <span id="cartCount">0</span>
+    </a>
+  </div>
+</nav>
+
+<main>{% block content %}{% endblock %}</main>
+
+<footer>
+  <div class="footer-grid">
+    <div>
+      <div class="footer-brand-name">LUX PARFUM</div>
+      <p class="footer-desc">Dunyoning eng yaxshi parfumlarini sizga yetkazib beramiz. Har bir tomchi — his-tuyg'u, xotira va nafosatdir.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Katalog</h4>
+      <a href="{% url 'catalog' %}?gender=female">Ayollar uchun</a>
+      <a href="{% url 'catalog' %}?gender=male">Erkaklar uchun</a>
+      <a href="{% url 'catalog' %}?gender=unisex">Uniseks</a>
+    </div>
+    <div class="footer-col">
+      <h4>Brendlar</h4>
+      <a href="#">Chanel</a><a href="#">Dior</a><a href="#">Gucci</a><a href="#">YSL</a>
+    </div>
+    <div class="footer-col">
+      <h4>Aloqa</h4>
+      <a href="tel:+998901234567"><i class="fas fa-phone"></i> +998 90 123 45 67</a>
+      <a href="#"><i class="fab fa-telegram"></i> Telegram</a>
+      <a href="#"><i class="fab fa-instagram"></i> Instagram</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2024 Lux Parfum</span>
+    <span>Django bilan ishlab chiqilgan ✨</span>
+  </div>
+</footer>
+
+<!-- Checkout Modal -->
+<div id="checkoutModal" style="display:none;position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,.6);align-items:center;justify-content:center;">
+  <div style="background:white;width:520px;max-height:90vh;overflow-y:auto;padding:40px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:30px;">
+      <h2 style="font-size:28px;">Buyurtma berish</h2>
+      <button onclick="document.getElementById('checkoutModal').style.display='none'" style="background:none;border:none;font-size:24px;cursor:pointer;">&times;</button>
+    </div>
+    <form id="orderForm">
+      {% csrf_token %}
+      <div style="margin-bottom:18px;">
+        <label style="display:block;font-size:11px;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;color:var(--gold);">Ism Familiya *</label>
+        <input name="name" required style="width:100%;padding:12px 16px;border:1px solid var(--border);font-family:'Jost',sans-serif;font-size:14px;outline:none;" placeholder="Sardor Aliyev">
+      </div>
+      <div style="margin-bottom:18px;">
+        <label style="display:block;font-size:11px;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;color:var(--gold);">Telefon *</label>
+        <input name="phone" required style="width:100%;padding:12px 16px;border:1px solid var(--border);font-family:'Jost',sans-serif;font-size:14px;outline:none;" placeholder="+998 90 000 00 00">
+      </div>
+      <div style="margin-bottom:18px;">
+        <label style="display:block;font-size:11px;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;color:var(--gold);">Email</label>
+        <input name="email" type="email" style="width:100%;padding:12px 16px;border:1px solid var(--border);font-family:'Jost',sans-serif;font-size:14px;outline:none;" placeholder="email@gmail.com">
+      </div>
+      <div style="margin-bottom:28px;">
+        <label style="display:block;font-size:11px;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;color:var(--gold);">Manzil *</label>
+        <textarea name="address" required rows="3" style="width:100%;padding:12px 16px;border:1px solid var(--border);font-family:'Jost',sans-serif;font-size:14px;outline:none;resize:none;" placeholder="Toshkent sh., Yunusobod..."></textarea>
+      </div>
+      <input type="hidden" name="cart" id="cartDataInput">
+      <button type="submit" class="btn-gold" style="width:100%;justify-content:center;padding:16px;">
+        <i class="fas fa-check"></i> Buyurtmani tasdiqlash
+      </button>
+    </form>
+  </div>
+</div>
+
+<script>
+let cart = JSON.parse(localStorage.getItem('lux_cart') || '[]');
+updateCartUI();
+function openCart(e){e.preventDefault();document.getElementById('cartSidebar').classList.add('open');document.getElementById('cartOverlay').classList.add('open');}
+function closeCart(){document.getElementById('cartSidebar').classList.remove('open');document.getElementById('cartOverlay').classList.remove('open');}
+function addToCart(id,name,brand,price){const ex=cart.find(i=>i.id===id);if(ex){ex.qty++;}else{cart.push({id,name,brand,price,qty:1});}saveCart();updateCartUI();showToast(name+" savatga qo'shildi!");}
+function removeFromCart(id){cart=cart.filter(i=>i.id!==id);saveCart();updateCartUI();}
+function changeQty(id,delta){const item=cart.find(i=>i.id===id);if(item){item.qty+=delta;if(item.qty<=0)removeFromCart(id);}saveCart();updateCartUI();}
+function saveCart(){localStorage.setItem('lux_cart',JSON.stringify(cart));}
+function updateCartUI(){
+  const count=cart.reduce((s,i)=>s+i.qty,0);
+  document.getElementById('cartCount').textContent=count;
+  const total=cart.reduce((s,i)=>s+i.price*i.qty,0);
+  document.getElementById('cartTotal').textContent=total.toLocaleString('uz-UZ')+" so'm";
+  const container=document.getElementById('cartItems');
+  if(cart.length===0){container.innerHTML='<div class="empty-cart"><i class="fas fa-shopping-bag"></i><p>Savat bo\'sh</p></div>';return;}
+  container.innerHTML=cart.map(item=>`
+    <div class="cart-item">
+      <div class="cart-item-img"><i class="fas fa-spray-can"></i></div>
+      <div class="cart-item-info">
+        <div class="cart-item-brand">${item.brand}</div>
+        <div class="cart-item-name">${item.name}</div>
+        <div class="cart-item-price">${(item.price*item.qty).toLocaleString('uz-UZ')} so'm</div>
+        <div class="cart-item-controls">
+          <button class="qty-btn" onclick="changeQty(${item.id},-1)">−</button>
+          <span class="qty-display">${item.qty}</span>
+          <button class="qty-btn" onclick="changeQty(${item.id},1)">+</button>
+          <button class="remove-item" onclick="removeFromCart(${item.id})"><i class="fas fa-trash"></i></button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+function openCheckout(){if(cart.length===0){showToast("Savat bo'sh!");return;}closeCart();const m=document.getElementById('checkoutModal');m.style.display='flex';}
+document.getElementById('orderForm').addEventListener('submit',async function(e){
+  e.preventDefault();
+  const formData=new FormData(this);
+  formData.set('cart',JSON.stringify(cart));
+  const res=await fetch("{% url 'checkout' %}",{method:'POST',body:formData});
+  const data=await res.json();
+  if(data.success){cart=[];saveCart();updateCartUI();document.getElementById('checkoutModal').style.display='none';showToast('Buyurtmangiz #'+data.order_id+' qabul qilindi!');}
+});
+function showToast(msg){const t=document.createElement('div');t.className='alert alert-success';t.innerHTML='<i class="fas fa-check-circle"></i>'+msg;document.querySelector('.messages-container').appendChild(t);setTimeout(()=>t.remove(),4000);}
+setTimeout(()=>{document.querySelectorAll('.alert').forEach(a=>{setTimeout(()=>a.style.opacity='0',3000);setTimeout(()=>a.remove(),3500);});},100);
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

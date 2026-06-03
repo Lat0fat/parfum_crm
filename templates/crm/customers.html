@@ -1,0 +1,59 @@
+{% extends "base/admin_base.html" %}
+{% block title %}Mijozlar{% endblock %}
+{% block page_title %}Mijozlar (CRM){% endblock %}
+{% block content %}
+<div style="display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap;">
+  <form method="GET" style="display:flex;gap:10px;flex:1;">
+    <input type="text" name="q" placeholder="Ism yoki telefon..." value="{{ request.GET.q }}"
+      style="padding:10px 16px;border:1px solid var(--border);font-family:'Jost',sans-serif;font-size:13px;outline:none;flex:1;">
+    <button type="submit" style="padding:10px 20px;background:var(--gold);color:white;border:none;cursor:pointer;">
+      <i class="fas fa-search"></i>
+    </button>
+  </form>
+  <form method="GET" style="display:flex;gap:6px;">
+    {% for val, label in request.resolver_match.func.view_class.STATUS_CHOICES|default:"" %}{% endfor %}
+    <a href="{% url 'customers' %}" style="padding:10px 14px;border:1px solid {% if not status %}var(--gold){% else %}var(--border){% endif %};font-size:12px;color:{% if not status %}var(--gold){% else %}#999{% endif %};">Barchasi</a>
+    <a href="?status=vip" style="padding:10px 14px;border:1px solid {% if status == 'vip' %}var(--gold){% else %}var(--border){% endif %};font-size:12px;color:{% if status == 'vip' %}var(--gold){% else %}#999{% endif %};">VIP</a>
+    <a href="?status=active" style="padding:10px 14px;border:1px solid {% if status == 'active' %}var(--gold){% else %}var(--border){% endif %};font-size:12px;color:{% if status == 'active' %}var(--gold){% else %}#999{% endif %};">Faol</a>
+    <a href="?status=lead" style="padding:10px 14px;border:1px solid {% if status == 'lead' %}var(--gold){% else %}var(--border){% endif %};font-size:12px;color:{% if status == 'lead' %}var(--gold){% else %}#999{% endif %};">Potensial</a>
+  </form>
+</div>
+
+<div class="panel-card">
+  <div class="panel-card-header">
+    <div class="panel-card-title">{{ customers|length }} ta mijoz</div>
+  </div>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Mijoz</th><th>Telefon</th><th>Status</th>
+        <th>Umumiy xarid</th><th>Sana</th><th>Amal</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in customers %}
+      <tr>
+        <td>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div style="width:36px;height:36px;border-radius:50%;background:var(--blush,#f5ebe0);display:flex;align-items:center;justify-content:center;color:var(--gold);font-family:'Cormorant Garamond',serif;font-size:16px;">
+              {{ c.name|first }}
+            </div>
+            <div>
+              <div style="font-weight:500;">{{ c.name }}</div>
+              <div style="font-size:11px;color:#aaa;">{{ c.email|default:"-" }}</div>
+            </div>
+          </div>
+        </td>
+        <td>{{ c.phone }}</td>
+        <td><span class="badge badge-{{ c.status }}">{{ c.get_status_display }}</span></td>
+        <td style="font-weight:500;color:var(--gold-dark);">{{ c.total_spent|floatformat:0 }} so'm</td>
+        <td style="font-size:12px;color:#aaa;">{{ c.created_at|date:"d.m.Y" }}</td>
+        <td><a href="{% url 'customer_detail' c.pk %}" class="btn-sm">Ko'rish</a></td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" style="text-align:center;color:#ccc;padding:40px;">Mijozlar yo'q</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

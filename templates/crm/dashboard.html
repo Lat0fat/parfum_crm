@@ -1,0 +1,150 @@
+{% extends "base/admin_base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+.grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+.grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:24px; }
+.top-parfum { display:flex; align-items:center; gap:14px; padding:14px 0; border-bottom:1px solid #f0ebe4; }
+.top-parfum:last-child { border-bottom:none; }
+.top-parfum-rank { font-family:'Cormorant Garamond',serif; font-size:28px; color:var(--gold); opacity:.5; width:32px; flex-shrink:0; }
+.top-parfum-img { width:48px; height:48px; background:var(--blush,#f5ebe0); display:flex; align-items:center; justify-content:center; font-size:20px; color:var(--gold); opacity:.6; flex-shrink:0; }
+.top-parfum-info { flex:1; }
+.top-parfum-name { font-size:14px; font-weight:500; margin-bottom:2px; }
+.top-parfum-brand { font-size:11px; color:#aaa; }
+.top-parfum-sold { font-size:13px; color:var(--gold); font-weight:500; }
+.quick-action { display:flex; align-items:center; gap:12px; padding:16px; border:1px solid var(--border); background:white; cursor:pointer; transition:all .2s; text-decoration:none; color:inherit; }
+.quick-action:hover { border-color:var(--gold); background:#fdf9f4; }
+.quick-action i { font-size:20px; color:var(--gold); width:28px; text-align:center; }
+.quick-action span { font-size:13px; }
+.alert-item { display:flex; align-items:center; gap:12px; padding:12px 16px; background:#fff8e1; border-left:3px solid #ffc107; margin-bottom:10px; }
+.alert-item i { color:#ffc107; }
+.alert-item span { font-size:13px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- STAT CARDS -->
+<div class="stat-cards">
+  <div class="stat-card">
+    <i class="fas fa-shopping-bag stat-card-icon"></i>
+    <div class="stat-card-label">Jami buyurtmalar</div>
+    <div class="stat-card-value">{{ total_orders }}</div>
+    <div class="stat-card-sub">Bu oy: +{{ month_orders }}</div>
+  </div>
+  <div class="stat-card">
+    <i class="fas fa-coins stat-card-icon"></i>
+    <div class="stat-card-label">Umumiy daromad</div>
+    <div class="stat-card-value">{{ total_revenue|floatformat:0 }}</div>
+    <div class="stat-card-sub" style="font-size:10px;">Bu oy: {{ month_revenue|floatformat:0 }} so'm</div>
+  </div>
+  <div class="stat-card">
+    <i class="fas fa-users stat-card-icon"></i>
+    <div class="stat-card-label">Mijozlar</div>
+    <div class="stat-card-value">{{ total_customers }}</div>
+    <div class="stat-card-sub">Bu oy: +{{ new_customers }} yangi</div>
+  </div>
+  <div class="stat-card">
+    <i class="fas fa-exclamation-triangle stat-card-icon"></i>
+    <div class="stat-card-label">Diqqat</div>
+    <div class="stat-card-value">{{ pending_orders }}</div>
+    <div class="stat-card-sub">{{ low_stock }} mahsulot kam · {{ tasks_due }} vazifa</div>
+  </div>
+</div>
+
+<!-- ALERTS -->
+{% if low_stock > 0 or pending_orders > 0 %}
+<div class="panel-card" style="margin-bottom:24px;">
+  <div class="panel-card-header"><div class="panel-card-title">⚠️ Xabarnomalar</div></div>
+  <div class="panel-card-body">
+    {% if pending_orders > 0 %}
+    <div class="alert-item">
+      <i class="fas fa-shopping-bag"></i>
+      <span>{{ pending_orders }} ta yangi buyurtma tasdiqlashni kutmoqda</span>
+      <a href="{% url 'orders' %}?status=new" style="margin-left:auto;color:var(--gold);font-size:12px;">Ko'rish →</a>
+    </div>
+    {% endif %}
+    {% if low_stock > 0 %}
+    <div class="alert-item">
+      <i class="fas fa-warehouse"></i>
+      <span>{{ low_stock }} ta mahsulot omborda kam (5 tadan kam)</span>
+      <a href="{% url 'inventory' %}" style="margin-left:auto;color:var(--gold);font-size:12px;">Ko'rish →</a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+<div class="grid-2">
+  <!-- RECENT ORDERS -->
+  <div class="panel-card">
+    <div class="panel-card-header">
+      <div class="panel-card-title">So'nggi buyurtmalar</div>
+      <a href="{% url 'orders' %}" style="font-size:12px;color:var(--gold);">Barchasi →</a>
+    </div>
+    <div class="panel-card-body" style="padding:0;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>#</th><th>Mijoz</th><th>Summa</th><th>Holat</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for order in recent_orders %}
+          <tr>
+            <td style="color:var(--gold);font-weight:500;">#{{ order.pk }}</td>
+            <td>
+              <div style="font-weight:500;">{{ order.customer_name }}</div>
+              <div style="font-size:11px;color:#aaa;">{{ order.customer_phone }}</div>
+            </td>
+            <td style="font-weight:500;">{{ order.total_amount|floatformat:0 }}</td>
+            <td><span class="badge badge-{{ order.status }}">{{ order.get_status_display }}</span></td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" style="text-align:center;color:#ccc;padding:30px;">Buyurtmalar yo'q</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- RIGHT COLUMN -->
+  <div>
+    <!-- TOP PARFUMS -->
+    <div class="panel-card" style="margin-bottom:24px;">
+      <div class="panel-card-header">
+        <div class="panel-card-title">Top parfumlar</div>
+      </div>
+      <div class="panel-card-body">
+        {% for p in top_parfums %}
+        <div class="top-parfum">
+          <div class="top-parfum-rank">{{ forloop.counter }}</div>
+          <div class="top-parfum-img"><i class="fas fa-spray-can"></i></div>
+          <div class="top-parfum-info">
+            <div class="top-parfum-name">{{ p.name }}</div>
+            <div class="top-parfum-brand">{{ p.brand.name }}</div>
+          </div>
+          <div class="top-parfum-sold">{{ p.sold_count }} ta</div>
+        </div>
+        {% empty %}
+        <div style="text-align:center;color:#ccc;padding:20px;">Ma'lumot yo'q</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- QUICK ACTIONS -->
+    <div class="panel-card">
+      <div class="panel-card-header"><div class="panel-card-title">Tezkor amallar</div></div>
+      <div class="panel-card-body" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <a href="{% url 'products_manage' %}" class="quick-action"><i class="fas fa-plus"></i><span>Parfum qo'sh</span></a>
+        <a href="{% url 'orders' %}" class="quick-action"><i class="fas fa-list"></i><span>Buyurtmalar</span></a>
+        <a href="{% url 'customers' %}" class="quick-action"><i class="fas fa-user-plus"></i><span>Mijozlar</span></a>
+        <a href="{% url 'inventory' %}" class="quick-action"><i class="fas fa-warehouse"></i><span>Ombor</span></a>
+        <a href="{% url 'finances' %}" class="quick-action"><i class="fas fa-coins"></i><span>Moliya</span></a>
+        <a href="{% url 'tasks' %}" class="quick-action"><i class="fas fa-tasks"></i><span>Vazifalar</span></a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
