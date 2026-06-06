@@ -1,3 +1,14 @@
+# ═══════════════════════════════════════════════════════════════════
+#  GitHub Secrets (Settings → Secrets → Actions):
+#
+#  SSH_HOST          — Server IP yoki domain (masalan: 54.12.34.56)
+#  SSH_USER          — SSH foydalanuvchi (masalan: ubuntu)
+#  SSH_PRIVATE_KEY   — Private SSH kalit (.pem mazmuni)
+#  SSH_PORT          — SSH port (odatda: 22)
+#  DJANGO_SECRET_KEY — Django secret key (50+ tasodifiy belgi)
+#  ALLOWED_HOSTS     — Vergul bilan: 54.12.34.56,uzbekai.uz,www.uzbekai.uz
+# ═══════════════════════════════════════════════════════════════════
+
 name: CI/CD Pipeline
 
 on:
@@ -113,15 +124,25 @@ jobs:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GHCR_USER: ${{ github.actor }}
           IMAGE: ${{ env.IMAGE_NAME }}:latest
+          DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
+          ALLOWED_HOSTS: ${{ secrets.ALLOWED_HOSTS }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
-          envs: GHCR_TOKEN,GHCR_USER,IMAGE
+          envs: GHCR_TOKEN,GHCR_USER,IMAGE,DJANGO_SECRET_KEY,ALLOWED_HOSTS
           script: |
             set -e
             cd /app/parfum-crm
+
+            # Create .env file with production secrets
+            cat > .env << EOF
+            SECRET_KEY=${DJANGO_SECRET_KEY}
+            ALLOWED_HOSTS=${ALLOWED_HOSTS}
+            DEBUG=False
+            EOF
+            chmod 600 .env
 
             # Log in to GHCR
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
