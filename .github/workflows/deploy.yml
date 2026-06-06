@@ -32,9 +32,15 @@ jobs:
 
       - name: Run migrations
         run: python manage.py migrate --noinput
+        env:
+          DJANGO_SETTINGS_MODULE: core.settings
+          SECRET_KEY: ci-only-secret-key-not-used-in-production
 
       - name: Run tests
         run: python manage.py test
+        env:
+          DJANGO_SETTINGS_MODULE: core.settings
+          SECRET_KEY: ci-only-secret-key-not-used-in-production
 
   # ──────────────────────────────────────────────
   # 2. Build Docker image and push to GHCR
@@ -83,6 +89,10 @@ jobs:
     needs: build
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
 
+    permissions:
+      contents: read
+      packages: read
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -99,26 +109,30 @@ jobs:
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_USER: ${{ github.actor }}
+          IMAGE: ${{ env.IMAGE_NAME }}:latest
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
+          envs: GHCR_TOKEN,GHCR_USER,IMAGE
           script: |
+            set -e
             cd /app/parfum-crm
 
             # Log in to GHCR
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
 
-            # Pull the latest image
-            docker pull ${{ env.IMAGE_NAME }}:latest
-
-            # Update docker-compose to use pre-built image
-            export IMAGE=${{ env.IMAGE_NAME }}:latest
-
-            # Restart containers with zero downtime
+            # Pull latest image and restart containers
+            export IMAGE="$IMAGE"
             docker compose pull
             docker compose up -d --no-build --remove-orphans
+
+            # Run migrations on the running container
+            docker compose exec -T web python manage.py migrate --noinput
 
             # Clean up unused images
             docker image prune -f
