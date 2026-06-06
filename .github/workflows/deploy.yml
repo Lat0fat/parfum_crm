@@ -1,4 +1,4 @@
-# ═══════════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════════════
 #  GitHub Secrets (Settings → Secrets → Actions):
 #
 #  SSH_HOST          — Server IP yoki domain (masalan: 54.12.34.56)
@@ -6,8 +6,8 @@
 #  SSH_PRIVATE_KEY   — Private SSH kalit (.pem mazmuni)
 #  SSH_PORT          — SSH port (odatda: 22)
 #  DJANGO_SECRET_KEY — Django secret key (50+ tasodifiy belgi)
-#  ALLOWED_HOSTS     — Vergul bilan: 54.12.34.56,uzbekai.uz,www.uzbekai.uz
-# ═══════════════════════════════════════════════════════════════════
+#  ALLOWED_HOSTS     — Vergul bilan: 54.12.34.56,mysite.uz,www.mysite.uz
+# ══════════════════════════════════════════════════════════════════
 
 name: CI/CD Pipeline
 
@@ -19,45 +19,47 @@ on:
 
 env:
   IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/parfum-crm
+  DEPLOY_DIR: /app/parfum-crm
+  PYTHON_VERSION: "3.11"
 
 jobs:
   # ──────────────────────────────────────────────
-  # 1. Run Django tests
+  # 1. Testlar
   # ──────────────────────────────────────────────
   test:
-    name: Run Tests
+    name: Test
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
 
-      - name: Install dependencies
+      - name: Kutubxonalarni o'rnatish
         run: pip install -r requirements.txt
 
-      - name: Run migrations
+      - name: Migratsiyalar
         run: python manage.py migrate --noinput
         env:
-          DJANGO_SETTINGS_MODULE: core.settings
-          SECRET_KEY: ci-only-secret-key-not-used-in-production
+          SECRET_KEY: ci-secret-key
+          DEBUG: "True"
+          ALLOWED_HOSTS: "localhost,127.0.0.1"
 
-      - name: Run tests
-        run: python manage.py test
+      - name: Testlar
+        run: python manage.py test --verbosity=2
         env:
-          DJANGO_SETTINGS_MODULE: core.settings
-          SECRET_KEY: ci-only-secret-key-not-used-in-production
+          SECRET_KEY: ci-secret-key
+          DEBUG: "True"
+          ALLOWED_HOSTS: "localhost,127.0.0.1"
 
   # ──────────────────────────────────────────────
-  # 2. Build Docker image and push to GHCR
+  # 2. Docker image build va GHCR ga push
   # ──────────────────────────────────────────────
   build:
-    name: Build & Push Image
+    name: Build & Push
     runs-on: ubuntu-latest
     needs: test
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
@@ -65,22 +67,24 @@ jobs:
     permissions:
       contents: read
       packages: write
+      actions: write
+
+    outputs:
+      image: ${{ env.IMAGE_NAME }}:${{ github.sha }}
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Log in to GitHub Container Registry
+      - name: GHCR ga login
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v3
 
-      - name: Build and push Docker image
+      - name: Build va push
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -92,10 +96,10 @@ jobs:
           cache-to: type=gha,mode=max
 
   # ──────────────────────────────────────────────
-  # 3. Deploy to production server via SSH
+  # 3. Serverni yangilash
   # ──────────────────────────────────────────────
   deploy:
-    name: Deploy to Server
+    name: Deploy
     runs-on: ubuntu-latest
     needs: build
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
@@ -105,10 +109,9 @@ jobs:
       packages: read
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Copy docker-compose and nginx config to server
+      - name: Fayllarni serverga yuborish
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -116,14 +119,14 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
           source: "docker-compose.yml,nginx/"
-          target: "/app/parfum-crm"
+          target: ${{ env.DEPLOY_DIR }}
 
-      - name: Deploy via SSH
+      - name: Deploy
         uses: appleboy/ssh-action@v1.0.3
         env:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GHCR_USER: ${{ github.actor }}
-          IMAGE: ${{ env.IMAGE_NAME }}:latest
+          IMAGE: ${{ env.IMAGE_NAME }}:${{ github.sha }}
           DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
           ALLOWED_HOSTS: ${{ secrets.ALLOWED_HOSTS }}
         with:
@@ -132,59 +135,60 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
           envs: GHCR_TOKEN,GHCR_USER,IMAGE,DJANGO_SECRET_KEY,ALLOWED_HOSTS
+          command_timeout: 10m
           script: |
             set -euo pipefail
             DEPLOY_DIR="/app/parfum-crm"
 
-            # ── 1. Docker o'rnatish ────────────────────────────────────────
-            if ! command -v docker >/dev/null 2>&1; then
-              echo ">>> Docker o'rnatilmoqda..."
+            # ── Docker ────────────────────────────────────────────────────
+            if ! command -v docker &>/dev/null; then
               curl -fsSL https://get.docker.com | sudo sh
               sudo usermod -aG docker "$USER"
-              echo ">>> Docker o'rnatildi"
             fi
-            echo ">>> Docker: $(sudo docker --version)"
 
-            # ── 2. Docker Compose plugin o'rnatish ─────────────────────────
-            if ! sudo docker compose version >/dev/null 2>&1; then
-              echo ">>> Docker Compose o'rnatilmoqda..."
-              DOCKER_PLUGIN="/usr/local/lib/docker/cli-plugins"
-              sudo mkdir -p "${DOCKER_PLUGIN}"
-              sudo curl -SL "https://github.com/docker/compose/releases/download/v2.27.0/docker-compose-linux-x86_64" \
-                -o "${DOCKER_PLUGIN}/docker-compose"
-              sudo chmod +x "${DOCKER_PLUGIN}/docker-compose"
+            # ── Docker Compose plugin ──────────────────────────────────────
+            if ! sudo docker compose version &>/dev/null; then
+              PLUGIN_DIR="/usr/local/lib/docker/cli-plugins"
+              sudo mkdir -p "$PLUGIN_DIR"
+              sudo curl -fsSL \
+                "https://github.com/docker/compose/releases/download/v2.27.0/docker-compose-linux-x86_64" \
+                -o "$PLUGIN_DIR/docker-compose"
+              sudo chmod +x "$PLUGIN_DIR/docker-compose"
             fi
-            echo ">>> Docker Compose: $(sudo docker compose version)"
 
-            # ── 3. Papka va SQLite fayl tayyorlash ────────────────────────
-            sudo mkdir -p "${DEPLOY_DIR}"
-            sudo chown -R "$USER:$USER" "${DEPLOY_DIR}"
-            touch "${DEPLOY_DIR}/db.sqlite3"
+            # ── Papka tayyorlash ───────────────────────────────────────────
+            sudo mkdir -p "$DEPLOY_DIR"
+            sudo chown -R "$USER:$USER" "$DEPLOY_DIR"
+            touch "$DEPLOY_DIR/db.sqlite3"
 
-            # ── 4. .env fayl yaratish ──────────────────────────────────────
-            # IMAGE ham .env ga yoziladi — docker compose uni image: ${IMAGE} uchun o'qiydi
+            # ── .env yozish ────────────────────────────────────────────────
             printf 'SECRET_KEY=%s\nALLOWED_HOSTS=%s\nDEBUG=False\nIMAGE=%s\n' \
-              "${DJANGO_SECRET_KEY}" "${ALLOWED_HOSTS}" "${IMAGE}" \
-              > "${DEPLOY_DIR}/.env"
-            chmod 600 "${DEPLOY_DIR}/.env"
-            echo ">>> .env: OK"
+              "$DJANGO_SECRET_KEY" "$ALLOWED_HOSTS" "$IMAGE" \
+              > "$DEPLOY_DIR/.env"
+            chmod 600 "$DEPLOY_DIR/.env"
 
-            # ── 5. ghcr.io ga login ────────────────────────────────────────
-            echo "${GHCR_TOKEN}" | sudo docker login ghcr.io -u "${GHCR_USER}" --password-stdin
-            echo ">>> ghcr.io: OK"
+            # ── GHCR login ─────────────────────────────────────────────────
+            echo "$GHCR_TOKEN" | sudo docker login ghcr.io -u "$GHCR_USER" --password-stdin
 
-            # ── 6. Image pull va konteynerlarni ishga tushirish ────────────
-            cd "${DEPLOY_DIR}"
+            # ── Image pull ─────────────────────────────────────────────────
+            cd "$DEPLOY_DIR"
             sudo docker compose pull
-            sudo docker compose up -d --no-build --remove-orphans
-            echo ">>> Konteynerlar: OK"
 
-            # ── 7. Migratsiyalar ───────────────────────────────────────────
+            # ── Konteynerlarni ishga tushirish ─────────────────────────────
+            sudo docker compose up -d --no-build --remove-orphans --force-recreate
+
+            # ── Web tayyor bo'lishini kutish ───────────────────────────────
+            echo "Web konteyneri kutilmoqda..."
+            timeout 60 bash -c \
+              'until sudo docker compose exec -T web python -c "import sys;sys.exit(0)" &>/dev/null; do sleep 3; done'
+
+            # ── Migratsiyalar ──────────────────────────────────────────────
             sudo docker compose exec -T web python manage.py migrate --noinput
-            echo ">>> Migratsiyalar: OK"
 
-            # ── 8. Eski imagelarni tozalash ────────────────────────────────
+            # ── Static fayllar ─────────────────────────────────────────────
+            sudo docker compose exec -T web python manage.py collectstatic --noinput
+
+            # ── Eski imagelarni tozalash ───────────────────────────────────
             sudo docker image prune -f
 
-            echo ""
-            echo "DEPLOY MUVAFFAQIYATLI YAKUNLANDI!"
+            echo "✓ Deploy muvaffaqiyatli yakunlandi!"
