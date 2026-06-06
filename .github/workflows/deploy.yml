@@ -133,27 +133,58 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           envs: GHCR_TOKEN,GHCR_USER,IMAGE,DJANGO_SECRET_KEY,ALLOWED_HOSTS
           script: |
-            set -e
-            cd /app/parfum-crm
+            set -euo pipefail
+            DEPLOY_DIR="/app/parfum-crm"
 
-            # Create .env file with production secrets
-            cat > .env << EOF
-            SECRET_KEY=${DJANGO_SECRET_KEY}
-            ALLOWED_HOSTS=${ALLOWED_HOSTS}
-            DEBUG=False
-            EOF
-            chmod 600 .env
+            # ── 1. Docker o'rnatish ────────────────────────────────────────
+            if ! command -v docker >/dev/null 2>&1; then
+              echo ">>> Docker o'rnatilmoqda..."
+              curl -fsSL https://get.docker.com | sudo sh
+              sudo usermod -aG docker "$USER"
+              echo ">>> Docker o'rnatildi"
+            fi
+            echo ">>> Docker: $(sudo docker --version)"
 
-            # Log in to GHCR
-            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+            # ── 2. Docker Compose plugin o'rnatish ─────────────────────────
+            if ! sudo docker compose version >/dev/null 2>&1; then
+              echo ">>> Docker Compose o'rnatilmoqda..."
+              DOCKER_PLUGIN="/usr/local/lib/docker/cli-plugins"
+              sudo mkdir -p "${DOCKER_PLUGIN}"
+              sudo curl -SL "https://github.com/docker/compose/releases/download/v2.27.0/docker-compose-linux-x86_64" \
+                -o "${DOCKER_PLUGIN}/docker-compose"
+              sudo chmod +x "${DOCKER_PLUGIN}/docker-compose"
+            fi
+            echo ">>> Docker Compose: $(sudo docker compose version)"
 
-            # Pull latest image and restart containers
-            export IMAGE="$IMAGE"
-            docker compose pull
-            docker compose up -d --no-build --remove-orphans
+            # ── 3. Papka va SQLite fayl tayyorlash ────────────────────────
+            sudo mkdir -p "${DEPLOY_DIR}"
+            sudo chown -R "$USER:$USER" "${DEPLOY_DIR}"
+            touch "${DEPLOY_DIR}/db.sqlite3"
 
-            # Run migrations on the running container
-            docker compose exec -T web python manage.py migrate --noinput
+            # ── 4. .env fayl yaratish ──────────────────────────────────────
+            # IMAGE ham .env ga yoziladi — docker compose uni image: ${IMAGE} uchun o'qiydi
+            printf 'SECRET_KEY=%s\nALLOWED_HOSTS=%s\nDEBUG=False\nIMAGE=%s\n' \
+              "${DJANGO_SECRET_KEY}" "${ALLOWED_HOSTS}" "${IMAGE}" \
+              > "${DEPLOY_DIR}/.env"
+            chmod 600 "${DEPLOY_DIR}/.env"
+            echo ">>> .env: OK"
 
-            # Clean up unused images
-            docker image prune -f
+            # ── 5. ghcr.io ga login ────────────────────────────────────────
+            echo "${GHCR_TOKEN}" | sudo docker login ghcr.io -u "${GHCR_USER}" --password-stdin
+            echo ">>> ghcr.io: OK"
+
+            # ── 6. Image pull va konteynerlarni ishga tushirish ────────────
+            cd "${DEPLOY_DIR}"
+            sudo docker compose pull
+            sudo docker compose up -d --no-build --remove-orphans
+            echo ">>> Konteynerlar: OK"
+
+            # ── 7. Migratsiyalar ───────────────────────────────────────────
+            sudo docker compose exec -T web python manage.py migrate --noinput
+            echo ">>> Migratsiyalar: OK"
+
+            # ── 8. Eski imagelarni tozalash ────────────────────────────────
+            sudo docker image prune -f
+
+            echo ""
+            echo "DEPLOY MUVAFFAQIYATLI YAKUNLANDI!"

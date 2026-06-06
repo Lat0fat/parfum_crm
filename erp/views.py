@@ -1,4 +1,6 @@
-from django.shortcuts import render, redirect
+from datetime import date
+
+from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Sum
 
 from erp.models import Brand, Category, Parfum, Order, Expense, Supplier, StockMovement
@@ -21,7 +23,7 @@ def add_stock(request):
         quantity = int(request.POST.get('quantity', 0))
         unit_price = request.POST.get('unit_price', 0)
         if parfum_id and quantity > 0:
-            parfum = Parfum.objects.get(pk=parfum_id)
+            parfum = get_object_or_404(Parfum, pk=parfum_id)
             parfum.stock += quantity
             parfum.save()
             StockMovement.objects.create(
@@ -39,7 +41,7 @@ def finances(request):
             title=request.POST.get('title', ''),
             category=request.POST.get('category', 'other'),
             amount=request.POST.get('amount', 0),
-            date=request.POST.get('date') or __import__('datetime').date.today(),
+            date=request.POST.get('date') or date.today(),
             description=request.POST.get('description', ''),
         )
         return redirect('finances')
@@ -92,4 +94,6 @@ def products_manage(request):
             is_new='is_new' in request.POST,
         )
         return redirect('products_manage')
-    return render(request, 'erp/products.html', {'parfums': Parfum.objects.select_related('brand', 'category').all()})
+    return render(request, 'erp/products.html', {
+        'parfums': Parfum.objects.select_related('brand', 'category').all(),
+    })

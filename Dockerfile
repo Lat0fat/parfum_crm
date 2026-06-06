@@ -1,7 +1,8 @@
 FROM python:3.11-slim
 
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    DJANGO_SETTINGS_MODULE=core.settings
 
 WORKDIR /app
 
@@ -14,7 +15,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-RUN mkdir -p /app/static && python manage.py collectstatic --noinput
+# static/ papka bo'lmasa yaratib, staticfiles yig'amiz
+ARG SECRET_KEY=build-time-placeholder-key
+ENV SECRET_KEY=${SECRET_KEY}
+
+RUN mkdir -p /app/static /app/staticfiles && \
+    python manage.py collectstatic --noinput
 
 EXPOSE 8000
 
